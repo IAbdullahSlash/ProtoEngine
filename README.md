@@ -41,6 +41,29 @@ memory. Gemma also summarises who is already doing it, what room is left,
 and the closest matches. Every link shown came back from the GitHub or Hacker
 News API; Gemma never supplies a URL.
 
+**MCP connector.** ProtoEngine is also a remote MCP server at `/api/mcp`
+([`src/app/api/mcp/route.ts`](src/app/api/mcp/route.ts)), built with
+`mcp-handler`. The server calls Gemma itself, so you get the same marks
+whichever AI app connects to it. Tools:
+
+| Tool | What it does |
+| --- | --- |
+| `start_evaluation` | Researches and marks an idea; returns the mark, verdict, reasons, closest matches and a link |
+| `research_market` | GitHub + Hacker News search with a Gemma summary of who is already doing it |
+| `get_evaluation` | Fetches a saved evaluation by its id |
+
+Connect it:
+
+- **Claude (web or desktop):** Settings → Connectors → Add custom connector → paste `https://<your-deployment>/api/mcp`
+- **Claude Code:** `claude mcp add --transport http protoengine https://<your-deployment>/api/mcp`
+- **ChatGPT:** Settings → Apps & Connectors → Advanced settings → Developer mode → Create, paste the URL, no authentication
+- **Gemini CLI:** in `~/.gemini/settings.json`, `"mcpServers": { "protoengine": { "httpUrl": "https://<your-deployment>/api/mcp" } }`
+
+Every evaluation gets an id and a link (`/?e=<id>`) that opens it on the
+website, whether it was made on the site or through the connector.
+Evaluations are kept in Upstash Redis when it is configured, otherwise in
+memory (lost on restart).
+
 Gemma's reply is parsed as JSON and validated with zod. If it is malformed,
 ProtoEngine retries once with the same Gemma model and the error appended to
 the prompt; if that also fails, you see an error. Transient Gemini API errors
@@ -54,7 +77,8 @@ curl -X POST http://localhost:3000/api/evaluate \
   -d '{"idea":"...","purpose":"hackathon","users":"students","weeks":2,"skills":"React"}'
 ```
 
-Returns `{ model, mark, verdict, criteria: [{ key, label, score, reason }], research }`.
+Returns `{ id, createdAt, input, model, mark, verdict, criteria: [{ key, label, score, reason }], research }`.
+`GET /api/evaluation/<id>` returns a saved evaluation.
 
 ```bash
 curl -X POST http://localhost:3000/api/research   -H "Content-Type: application/json"   -d '{"idea":"..."}'
@@ -74,7 +98,8 @@ Open http://localhost:3000.
 
 ## Stack
 
-Next.js 14 (App Router), TypeScript, Tailwind CSS, `@google/genai`, zod.
+Next.js 14 (App Router), TypeScript, Tailwind CSS, `@google/genai`, zod,
+`mcp-handler` + `@modelcontextprotocol/server`, optional Upstash Redis.
 
 ## Contributing
 

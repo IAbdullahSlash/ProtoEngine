@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Evaluation } from "@/lib/evaluation";
 import type { Research } from "@/lib/research";
-import type { Snapshot, Verdict } from "@/lib/snapshot";
+import type { Verdict } from "@/lib/snapshot";
 
-type Result = Snapshot & { research: Research };
+type Result = Evaluation;
 
 const STAGES = ["Gemma is choosing search terms…", "Searching GitHub and Hacker News…", "Gemma is marking against the evidence…"];
 
@@ -41,6 +42,27 @@ export default function Home() {
     };
   }, [loading]);
 
+  // A link ending ?e=<id> opens a saved evaluation (made here or through the MCP connector).
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("e");
+    if (!id) return;
+    fetch(`/api/evaluation/${encodeURIComponent(id)}`)
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Could not load the evaluation.");
+        const e = data as Result;
+        setResult(e);
+        setForm({
+          idea: e.input.idea,
+          purpose: e.input.purpose ?? "",
+          users: e.input.users ?? "",
+          weeks: e.input.weeks ? String(e.input.weeks) : "",
+          skills: e.input.skills ?? "",
+        });
+      })
+      .catch((err: Error) => setError(err.message));
+  }, []);
+
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -58,6 +80,7 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
       setResult(data as Result);
+      window.history.replaceState(null, "", `?e=${(data as Result).id}`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -155,12 +178,15 @@ export default function Home() {
             ))}
           </ul>
           <p className="mt-4 text-xs text-stone-400">
-            Marked by {result.model}. The overall mark is the mean of the six criteria, computed in code.
+            Marked by {result.model}. The overall mark is the mean of the six criteria, computed in code. Evaluation id{" "}
+            <code className="text-stone-500">{result.id}</code>.
           </p>
         </section>
       )}
 
       {result && <EvidenceCard research={result.research} />}
+
+      <ConnectorBox />
     </main>
   );
 }
@@ -226,6 +252,77 @@ function EvidenceCard({ research }: { research: Research }) {
       <p className="mt-4 text-xs text-stone-400">
         Searched for: {research.queries.join(", ")}. Every link above came from the GitHub or Hacker News API.
         {research.unavailable.length > 0 && ` ${research.unavailable.join(" and ")} could not be reached this time.`}
+      </p>
+    </section>
+  );
+}
+
+function ConnectorBox() {
+  const [origin, setOrigin] = useState("");
+  const [copied, setCopied] = useState(false);
+  useEffect(() => setOrigin(window.location.origin), []);
+  const url = `${origin}/api/mcp`;
+  const local = /localhost|127\.0\.0\.1/.test(origin);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked: the URL is still visible to select by hand */
+    }
+  };
+
+  const code = "rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[0.8rem] text-stone-800";
+  return (
+    <section className="mt-8 rounded-2xl border border-stone-300 bg-stone-900 p-5 text-stone-100 shadow-sm sm:p-6">
+      <h2 className="text-lg font-semibold">Use it in your own AI</h2>
+      <p className="mt-1 text-sm text-stone-300">
+        ProtoEngine is also an MCP connector. Your AI app calls it, and the marking still runs on Gemma 4 on our server, so
+        you get the same marks in any app. Tools: <code>start_evaluation</code>, <code>research_market</code>,{" "}
+        <code>get_evaluation</code>.
+      </p>
+      <div className="mt-4 flex items-center gap-2">
+        <code className="min-w-0 flex-1 truncate rounded-lg bg-stone-800 px-3 py-2 font-mono text-sm">{url}</code>
+        <button onClick={copy} className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-stone-900 hover:bg-stone-200">
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      {local && (
+        <p className="mt-2 text-xs text-amber-300">
+          This is a local address. Claude and ChatGPT on the web need the deployed https URL; Claude Code and Gemini CLI on
+          this machine can use it as is.
+        </p>
+      )}
+      <dl className="mt-5 space-y-4 text-sm">
+        <div>
+          <dt className="font-semibold">Claude (web or desktop)</dt>
+          <dd className="mt-1 text-stone-300">Settings → Connectors → Add custom connector, then paste the URL.</dd>
+        </div>
+        <div>
+          <dt className="font-semibold">Claude Code</dt>
+          <dd className="mt-1">
+            <code className={code}>claude mcp add --transport http protoengine {url}</code>
+          </dd>
+        </div>
+        <div>
+          <dt className="font-semibold">ChatGPT</dt>
+          <dd className="mt-1 text-stone-300">
+            Settings → Apps &amp; Connectors → Advanced settings → turn on Developer mode, then Create, paste the URL and
+            choose no authentication.
+          </dd>
+        </div>
+        <div>
+          <dt className="font-semibold">Gemini CLI</dt>
+          <dd className="mt-1 text-stone-300">
+            Add to <code className={code}>~/.gemini/settings.json</code>:{" "}
+            <code className={code}>{`"mcpServers": { "protoengine": { "httpUrl": "${url}" } }`}</code>
+          </dd>
+        </div>
+      </dl>
+      <p className="mt-5 text-sm text-stone-300">
+        Then ask: <span className="italic text-stone-100">&ldquo;Mark my idea with ProtoEngine: …&rdquo;</span>
       </p>
     </section>
   );

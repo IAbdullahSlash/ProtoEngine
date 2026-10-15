@@ -79,13 +79,13 @@ value per hour of work.
    real problem, worth solving, not already done, something new, within reach,
    someone wants it. Server computes the mean as the mark /10 and a verdict:
    Build (≥7.5), Narrow it down (≥5.5), Rethink (≥3.5), Drop.
-2. **Research as evidence** (`/api/research`): Hacker News (Algolia API) and
+2. **Research as evidence** (`/api/research`) ✅ done: Hacker News (Algolia API) and
    GitHub search, no keys needed. Gemma picks the search terms and summarises
    who is already doing it. Only show links that came back from the APIs. The
    same results are passed into the Snapshot prompt, so "Not already done"
    and "Something new" are marked against real evidence, not the model's
    memory.
-3. **MCP connector** (`/api/mcp`): tools `start_evaluation`,
+3. **MCP connector** (`/api/mcp`) ✅ done: tools `start_evaluation`,
    `research_market`, `get_evaluation`. The server calls Gemma itself, so the
    connector works the same in Claude, ChatGPT and Gemini CLI.
 4. **SKILL.md** in `/skill/protoengine/`: the marking method as an Agent Skill
