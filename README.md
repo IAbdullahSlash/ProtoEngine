@@ -64,6 +64,24 @@ website, whether it was made on the site or through the connector.
 Evaluations are kept in Upstash Redis when it is configured, otherwise in
 memory (lost on restart).
 
+**Agent Skill.** The marking method is also an
+[Agent Skill](https://agentskills.io) in [`skill/protoengine/`](skill/protoengine/SKILL.md),
+validated with the official `skills-ref` tool. It contains:
+
+- `SKILL.md`: when and how to mark an idea, the output format and edge cases.
+- `references/mark-scheme.md`: what each score from 0 to 10 means for each criterion.
+- `scripts/evidence.mjs`: GitHub + Hacker News search (Node 18+, no dependencies, no keys).
+- `scripts/mark.mjs`: turns the six scores into the mark and verdict, so the model never does the arithmetic.
+
+An agent with the ProtoEngine connector calls `start_evaluation`; one without
+it follows the skill's steps and the scripts. To try the skill on Gemma 4 with
+no connector, run the bundled harness, which gives Gemma the SKILL.md and lets it
+call only the skill's scripts:
+
+```bash
+GEMINI_API_KEY=... node tools/skill-harness.mjs "Mark my idea: ... Purpose: ... Weeks: 2. Skills: ..."
+```
+
 Gemma's reply is parsed as JSON and validated with zod. If it is malformed,
 ProtoEngine retries once with the same Gemma model and the error appended to
 the prompt; if that also fails, you see an error. Transient Gemini API errors

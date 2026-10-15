@@ -324,6 +324,19 @@ function ConnectorBox() {
       <p className="mt-5 text-sm text-stone-300">
         Then ask: <span className="italic text-stone-100">&ldquo;Mark my idea with ProtoEngine: …&rdquo;</span>
       </p>
+      <div className="mt-5 border-t border-stone-700 pt-4 text-sm text-stone-300">
+        <span className="font-semibold text-stone-100">Prefer an Agent Skill?</span> The same marking method is an open{" "}
+        <a
+          href="https://github.com/IAbdullahSlash/ProtoEngine/tree/main/skill/protoengine"
+          target="_blank"
+          rel="noreferrer"
+          className="text-white underline underline-offset-2"
+        >
+          SKILL.md
+        </a>{" "}
+        (Agent Skill Open Standard) with its mark scheme and scripts. Drop it into any agent that loads skills; it uses the
+        connector when present and marks on its own when not.
+      </div>
     </section>
   );
 }

@@ -88,7 +88,7 @@ value per hour of work.
 3. **MCP connector** (`/api/mcp`) ✅ done: tools `start_evaluation`,
    `research_market`, `get_evaluation`. The server calls Gemma itself, so the
    connector works the same in Claude, ChatGPT and Gemini CLI.
-4. **SKILL.md** in `/skill/protoengine/`: the marking method as an Agent Skill
+4. **SKILL.md** in `/skill/protoengine/` ✅ done: the marking method as an Agent Skill
    that follows the Agent Skill Open Standard (frontmatter `name` +
    `description`, instructions in Markdown). It tells an agent how to mark an
    idea and to use the MCP tools when available. Cheap, and named in the
