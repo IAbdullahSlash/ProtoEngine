@@ -26,20 +26,40 @@ export function extractJson(text: string): string {
   return unfenced.slice(start, end + 1);
 }
 
+const TRANSIENT = new Set([429, 500, 502, 503, 504]);
+const BACKOFF_MS = [1000, 2500];
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function callGemma(model: GemmaModel, system: string, prompt: string): Promise<string> {
-  const response = await getClient().models.generateContent({
-    model,
-    contents: prompt,
-    config: {
-      systemInstruction: system,
-      temperature: 0.3,
-      // Thinking on ("high") took ~2 min per marking; minimal keeps it demo-fast.
-      thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
-    },
-  });
-  const text = response.text;
-  if (!text) throw new GemmaError(`${model} returned an empty response.`);
-  return text;
+  // The Gemini API sometimes returns 500 "Internal error" for Gemma. Retry
+  // transient errors with the same model; anything else, or a third failure,
+  // is thrown.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const response = await getClient().models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          systemInstruction: system,
+          temperature: 0.3,
+          // Thinking on ("high") took ~2 min per marking; minimal keeps it demo-fast.
+          thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
+        },
+      });
+      const text = response.text;
+      if (!text) throw new GemmaError(`${model} returned an empty response.`);
+      return text;
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      if (status === undefined || !TRANSIENT.has(status) || attempt >= BACKOFF_MS.length) {
+        if (err instanceof GemmaError) throw err;
+        throw new GemmaError(`${model} failed${status ? ` (HTTP ${status})` : ""}: ${(err as Error).message}`);
+      }
+      console.warn(`[gemma] ${model} HTTP ${status}, retrying (${attempt + 1}/${BACKOFF_MS.length})`);
+      await sleep(BACKOFF_MS[attempt]);
+    }
+  }
 }
 
 /**

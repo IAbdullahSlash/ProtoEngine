@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { GemmaError } from "@/lib/gemma";
+import { gatherEvidence, summariseEvidence } from "@/lib/research";
 import { evaluateSnapshot, SnapshotInput } from "@/lib/snapshot";
 
 export const runtime = "nodejs";
@@ -19,8 +20,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const snapshot = await evaluateSnapshot(input.data);
-    return NextResponse.json(snapshot);
+    // Search first, then mark against the evidence while Gemma summarises it.
+    const evidence = await gatherEvidence(input.data.idea);
+    const [snapshot, research] = await Promise.all([
+      evaluateSnapshot(input.data, evidence),
+      summariseEvidence(input.data.idea, evidence),
+    ]);
+    return NextResponse.json({ ...snapshot, research });
   } catch (err) {
     const message = err instanceof GemmaError ? err.message : `Gemma call failed: ${(err as Error).message}`;
     console.error("[evaluate]", err);

@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Research } from "@/lib/research";
 import type { Snapshot, Verdict } from "@/lib/snapshot";
+
+type Result = Snapshot & { research: Research };
+
+const STAGES = ["Gemma is choosing search terms…", "Searching GitHub and Hacker News…", "Gemma is marking against the evidence…"];
 
 const VERDICT_STYLE: Record<Verdict, string> = {
   Build: "bg-emerald-100 text-emerald-900 ring-emerald-300",
@@ -21,7 +26,20 @@ export default function Home() {
   const [form, setForm] = useState({ idea: "", purpose: "", users: "", weeks: "", skills: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<Snapshot | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
+  const [stage, setStage] = useState(0);
+
+  // The API does all three stages in one call; step the label on a timer so
+  // the wait reads as progress.
+  useEffect(() => {
+    if (!loading) return setStage(0);
+    const t1 = setTimeout(() => setStage(1), 2500);
+    const t2 = setTimeout(() => setStage(2), 5000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [loading]);
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -39,7 +57,7 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
-      setResult(data as Snapshot);
+      setResult(data as Result);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -96,7 +114,7 @@ export default function Home() {
           disabled={loading}
           className="w-full rounded-lg bg-stone-900 px-4 py-2.5 font-semibold text-white transition hover:bg-stone-700 disabled:cursor-wait disabled:opacity-60"
         >
-          {loading ? "Gemma is marking…" : "Mark my idea"}
+          {loading ? STAGES[stage] : "Mark my idea"}
         </button>
       </form>
 
@@ -141,6 +159,74 @@ export default function Home() {
           </p>
         </section>
       )}
+
+      {result && <EvidenceCard research={result.research} />}
     </main>
+  );
+}
+
+function EvidenceCard({ research }: { research: Research }) {
+  const byId = new Map(research.items.map((i) => [i.id, i]));
+  const closest = research.closest.flatMap((c) => {
+    const item = byId.get(c.id);
+    return item ? [{ ...item, why: c.why }] : [];
+  });
+
+  return (
+    <section className="mt-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-sm font-medium uppercase tracking-wide text-stone-500">Evidence</h2>
+      <p className="mt-2 leading-relaxed text-stone-800">{research.summary}</p>
+      <p className="mt-3 rounded-lg bg-stone-50 p-3 text-sm leading-relaxed text-stone-700">
+        <span className="font-semibold text-stone-900">Room left: </span>
+        {research.gap}
+      </p>
+
+      {closest.length > 0 && (
+        <>
+          <h3 className="mt-5 font-semibold text-stone-800">Closest matches</h3>
+          <ul className="mt-2 space-y-3">
+            {closest.map((c) => (
+              <li key={c.id} className="rounded-lg border border-stone-200 p-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                  <a href={c.url} target="_blank" rel="noreferrer" className="font-medium text-stone-900 underline decoration-stone-300 underline-offset-2 hover:decoration-stone-600">
+                    {c.title}
+                  </a>
+                  <span className="text-xs text-stone-500">
+                    {c.source} · {c.stat}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-stone-600">{c.why}</p>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {research.items.length > 0 && (
+        <details className="mt-5">
+          <summary className="cursor-pointer text-sm font-medium text-stone-700">
+            All {research.items.length} search results
+          </summary>
+          <ul className="mt-2 divide-y divide-stone-100 text-sm">
+            {research.items.map((i) => (
+              <li key={i.id} className="py-2">
+                <a href={i.url} target="_blank" rel="noreferrer" className="text-stone-800 underline decoration-stone-300 underline-offset-2 hover:decoration-stone-600">
+                  {i.title}
+                </a>
+                <span className="ml-2 text-xs text-stone-500">
+                  {i.source} · {i.stat}
+                  {i.date && ` · ${i.date}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      <p className="mt-4 text-xs text-stone-400">
+        Searched for: {research.queries.join(", ")}. Every link above came from the GitHub or Hacker News API.
+        {research.unavailable.length > 0 && ` ${research.unavailable.join(" and ")} could not be reached this time.`}
+      </p>
+    </section>
   );
 }

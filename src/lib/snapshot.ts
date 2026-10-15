@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { askGemmaJson, PRIMARY_MODEL, type GemmaModel } from "./gemma";
+import { citeTitles, evidenceForPrompt, type Evidence } from "./research";
 
 export const CRITERIA = [
   { key: "real_problem", label: "Real problem", question: "Is this a problem people actually have, today?" },
@@ -52,9 +53,12 @@ export function verdictFor(mark: number): Verdict {
 const SYSTEM = `You are a strict but fair examiner marking a project idea like an exam answer.
 Mark each criterion as a whole number from 0 to 10, where 5 is an average idea.
 Do not inflate marks. Base every reason on the idea and context given; be specific, one or two sentences.
+You are also given EVIDENCE: real search results from GitHub and Hacker News. Mark "not_already_done" and
+"something_new" against that evidence, not your memory: if a result already does the idea, mark low and name it
+by its title (never by its id); if nothing close was found, say so. Never mention a product that is not in the evidence.
 Reply with a single JSON object and nothing else: no markdown, no code fences.`;
 
-function buildPrompt(input: SnapshotInput): string {
+function buildPrompt(input: SnapshotInput, evidence: Evidence): string {
   const context = [
     input.purpose && `Purpose: ${input.purpose}`,
     input.users && `Intended users: ${input.users}`,
@@ -71,6 +75,9 @@ ${input.idea}
 CONTEXT:
 ${context.length ? context.join("\n") : "(none given)"}
 
+EVIDENCE (searched: ${evidence.queries.join(", ")}):
+${evidenceForPrompt(evidence)}
+
 CRITERIA:
 ${criteriaList}
 
@@ -82,15 +89,16 @@ ${shape}
 
 export async function evaluateSnapshot(
   input: SnapshotInput,
+  evidence: Evidence,
   model: GemmaModel = PRIMARY_MODEL,
 ): Promise<Snapshot> {
-  const { data } = await askGemmaJson({ model, system: SYSTEM, prompt: buildPrompt(input), schema: GemmaMarks });
+  const { data } = await askGemmaJson({ model, system: SYSTEM, prompt: buildPrompt(input, evidence), schema: GemmaMarks });
 
   const criteria = CRITERIA.map((c) => ({
     key: c.key,
     label: c.label,
     score: data[c.key].score,
-    reason: data[c.key].reason,
+    reason: citeTitles(data[c.key].reason, evidence),
   }));
   // Arithmetic is done here, never by the model.
   const sum = criteria.reduce((acc, c) => acc + c.score, 0);
