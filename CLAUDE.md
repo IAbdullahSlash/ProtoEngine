@@ -2,7 +2,34 @@
 
 Write down a project idea and get it marked like an exam answer. Built at the
 Hacktoberfest Hack Day, Lucknow x Integral University (15–16 Oct 2026), for the
-Developer Tools track and the MLH "Best Use of Gemma 4" challenge.
+Developer Tools track. We are aiming at both prize categories:
+
+- **Best Use of Gemma 4** (Google DeepMind): rewards multimodal use (text +
+  images), a focused AI tool, and fast prototyping on the Gemini API.
+- **Best Open-Source AI Project** (DigitalOcean): open-weight AI must be an
+  important part of the project; public repo with an open-source licence. It
+  names an agent skill (must follow the Agent Skill Open Standard), an
+  open-weight model, and a model harness as examples that may be combined.
+
+## The pitch: an exam board for ideas
+
+Every part maps to how a real exam is marked, and every part is open:
+
+| Exam board | ProtoEngine |
+| --- | --- |
+| Answer sheet | Idea typed in, or a photo of a sketch (Gemma vision) |
+| Evidence | Real Hacker News + GitHub results, fed into the marking |
+| Examiner | `gemma-4-26b-a4b-it` marks six criteria |
+| Moderator | `gemma-4-31b-it` re-marks; big disagreements are flagged |
+| Mark scheme | `SKILL.md`: the method as an Agent Skill any agent can load |
+| Exam hall anywhere | MCP connector: the same engine inside Claude, ChatGPT, Gemini CLI, Hermes |
+
+One-line pitch: "ProtoEngine marks your idea like an exam, with evidence, a
+second marker and an open mark scheme, and it runs inside any AI agent."
+
+Demo table tactics: show a QR code to the deployed URL so judges try their own
+idea on their phone; have a sketch on paper ready to photograph; show the MCP
+connector working inside an AI app; show the SKILL.md file.
 
 This is a from-scratch rebuild of the author's earlier project idea-eval
 (github.com/IAbdullahSlash/idea-evaluator). Reuse its ideas, not its files:
@@ -44,35 +71,54 @@ every file in this repo is written during the event.
 ## Scope, in build order
 
 Build each step end to end (UI + API + test with a real idea) before starting
-the next. Steps 1–3 are the demo; 4+ are stretch.
+the next. Steps 1–4 are the demo; 5+ are stretch. Steps are ordered by prize
+value per hour of work.
 
-1. **Snapshot** (`/api/evaluate`): idea + context (purpose, users, weeks
+1. **Snapshot** (`/api/evaluate`) ✅ done: idea + context (purpose, users, weeks
    available, team skills) → Gemma marks six criteria 0–10 with a reason each:
    real problem, worth solving, not already done, something new, within reach,
    someone wants it. Server computes the mean as the mark /10 and a verdict:
    Build (≥7.5), Narrow it down (≥5.5), Rethink (≥3.5), Drop.
-2. **Research** (`/api/research`): Hacker News (Algolia API) and GitHub search,
-   no keys needed. Gemma summarises who is already doing it. Only show links
-   that came back from the APIs.
+2. **Research as evidence** (`/api/research`): Hacker News (Algolia API) and
+   GitHub search, no keys needed. Gemma picks the search terms and summarises
+   who is already doing it. Only show links that came back from the APIs. The
+   same results are passed into the Snapshot prompt, so "Not already done"
+   and "Something new" are marked against real evidence, not the model's
+   memory.
 3. **MCP connector** (`/api/mcp`): tools `start_evaluation`,
    `research_market`, `get_evaluation`. The server calls Gemma itself, so the
    connector works the same in Claude, ChatGPT and Gemini CLI.
-4. **Second marker:** `gemma-4-31b-it` re-marks the six criteria; flag any
-   criterion where the two markers differ by 3 or more.
-5. **Plan:** phases sized to the weeks available, summed in code.
-6. **SKILL.md** in `/skill`: the marking method as an Agent Skill.
-7. **Image input:** a photo of a sketch → Gemma extracts the idea text.
-8. **Ollama fallback:** same prompts against local `gemma4` via Ollama when
-   `USE_OLLAMA=1`.
+4. **SKILL.md** in `/skill/protoengine/`: the marking method as an Agent Skill
+   that follows the Agent Skill Open Standard (frontmatter `name` +
+   `description`, instructions in Markdown). It tells an agent how to mark an
+   idea and to use the MCP tools when available. Cheap, and named in the
+   Open-Source AI prize.
+5. **Image input:** a photo of a sketch or whiteboard → Gemma (vision) extracts
+   the idea text into the form. Named in the Gemma prize ("multimodal").
+6. **Moderator:** `gemma-4-31b-it` re-marks the six criteria in parallel; flag
+   any criterion where the two markers differ by 3 or more.
+7. **Ollama + Hermes Agent demo:** same prompts against local `gemma4` via
+   Ollama when `USE_OLLAMA=1` (explicit, still Gemma, never a silent
+   fallback). Then show Hermes Agent (open-source harness by Nous Research,
+   works with Ollama, loads Markdown skills) using the ProtoEngine skill on a
+   local Gemma. Only if it runs on the demo laptop; Hermes may need WSL on
+   Windows. Test before committing to it.
+8. **Plan:** phases sized to the weeks available, summed in code.
+
+Suggested timing for 16 Oct: research before the 10:15 sprint if possible;
+MCP + SKILL.md in the 10:15–12:45 sprint; image input and moderator in
+1:30–2:00; 2:00–2:30 is README, deploy, QR code and demo rehearsal only.
 
 Anything past step 3 that isn't finished by the freeze gets removed from the
 README and the deck, not left half-working.
 
 ## UI
 
-One page: idea form → mark card (big mark, verdict, six criteria with reasons)
-→ research list → "Use it in your own AI" box with the connector URL and
-per-app steps. Clean, readable, works on a laptop at a demo table.
+One page: idea form (with "photo of a sketch" option) → mark card (big mark,
+verdict, six criteria with reasons, moderator flags) → evidence list →
+"Use it in your own AI" box with the connector URL, per-app steps and a link
+to the SKILL.md. Clean, readable, works on a laptop at a demo table and on a
+judge's phone.
 
 ## Working rules
 
