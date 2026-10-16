@@ -1,5 +1,10 @@
 # ProtoEngine
 
+> **A Hacktoberfest 2026 (Hacktober '26) project, and fully open source.**
+> Built at the Hacktoberfest Hack Day, Lucknow x Integral University, and
+> released under the [MIT licence](LICENSE). Issues and pull requests are
+> welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 **Write down a project idea and get it marked like an exam answer, by
 [Gemma 4](https://ai.google.dev/gemma) (`gemma-4-26b-a4b-it`) through the
 Gemini API.**
@@ -10,9 +15,10 @@ happens in [`src/lib/gemma.ts`](src/lib/gemma.ts) (`callGemma` →
 marking prompt is in [`src/lib/snapshot.ts`](src/lib/snapshot.ts) and the
 research prompts in [`src/lib/research.ts`](src/lib/research.ts).
 
-Built at the Hacktoberfest Hack Day, Lucknow x Integral University
-(15–16 Oct 2026), for the Developer Tools track and the MLH "Best Use of
-Gemma 4" and "Best Open-Source AI Project" challenges.
+Made for Hacktoberfest 2026 at the Hacktoberfest Hack Day, Lucknow x Integral
+University (15–16 Oct 2026), for the Developer Tools track and the MLH "Best
+Use of Gemma 4" and "Best Open-Source AI Project" challenges. Every file in
+this repository was written during the event.
 
 ## An exam board for ideas
 
@@ -247,5 +253,6 @@ made the evaluation. The API routes allow up to 60 seconds per request.
 
 ## Contributing
 
-Contributions are welcome, especially for Hacktoberfest. See
+ProtoEngine is open source and was made for Hacktoberfest 2026, so
+contributions of any size are welcome. See
 [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under [MIT](LICENSE).
