@@ -163,8 +163,8 @@ You need Node.js 20 or newer and a free Gemini API key from
 [Google AI Studio](https://aistudio.google.com/apikey).
 
 ```bash
-git clone https://github.com/IAbdullahSlash/ProtoEngine.git
-cd ProtoEngine
+git clone https://github.com/IAbdullahSlash/ProtoEngine---MLH.git
+cd ProtoEngine---MLH
 npm install
 cp .env.example .env.local
 npm run dev

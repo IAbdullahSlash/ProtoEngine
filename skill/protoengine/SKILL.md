@@ -6,7 +6,7 @@ compatibility: Works in any agent. Uses the ProtoEngine MCP tools when connected
 metadata:
   author: IAbdullahSlash
   version: "0.1.0"
-  homepage: https://github.com/IAbdullahSlash/ProtoEngine
+  homepage: https://github.com/IAbdullahSlash/ProtoEngine---MLH
 ---
 
 # ProtoEngine: mark an idea like an exam answer

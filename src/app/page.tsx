@@ -327,7 +327,7 @@ function ConnectorBox() {
       <div className="mt-5 border-t border-stone-700 pt-4 text-sm text-stone-300">
         <span className="font-semibold text-stone-100">Prefer an Agent Skill?</span> The same marking method is an open{" "}
         <a
-          href="https://github.com/IAbdullahSlash/ProtoEngine/tree/main/skill/protoengine"
+          href="https://github.com/IAbdullahSlash/ProtoEngine---MLH/tree/main/skill/protoengine"
           target="_blank"
           rel="noreferrer"
           className="text-white underline underline-offset-2"
